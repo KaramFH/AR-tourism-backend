@@ -1,6 +1,4 @@
-from crypt import methods
-from email import message
-from enum import unique
+import datetime
 from types import MethodDescriptorType
 from flask import Flask,jsonify,request, make_response
 from flask_sqlalchemy import SQLAlchemy
@@ -45,6 +43,23 @@ class UserSchema(ma.Schema):
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 
+class Post(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80))
+    date = db.Column(db.DateTime, default= datetime.datetime.now(), nullable=False)
+    post_body = db.Column(db.Text(), nullable=False)
+
+    def __repr__(self):
+        return '<Post %r by %r' % (self.id,self.user_id)
+
+class PostSchema(ma.Schema):
+    class Meta:
+        fields = ('id','username','date','post_body')
+
+post_schema = PostSchema()
+posts_schema = PostSchema(many=True)
+
+
 def token_required(f):
     @wraps(f)
     def decorated(*args,**kwargs):
@@ -66,6 +81,34 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
     
     return decorated
+
+
+@app.route("/create_post",methods=['POST'])
+@token_required
+def create_post(current_user):
+    try:
+        data = request.form
+
+        text = data['text']
+        user = current_user.username
+
+        new_post = Post(username=str(user),post_body=str(text))
+
+        db.session.add(new_post)
+        db.session.commit()
+
+        return jsonify({'message':'Post created!'})
+    except:
+        return jsonify({'message':'Something went wrong!'})
+
+@app.route("/get_posts",methods=['GET'])
+@token_required
+def get_posts(current_user):
+    posts = Post.query.all()
+    results = posts_schema.dump(posts)
+
+    return jsonify(results)
+
 
 
 @app.route("/get",methods=['GET'])
