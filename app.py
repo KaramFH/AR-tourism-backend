@@ -60,6 +60,22 @@ post_schema = PostSchema()
 posts_schema = PostSchema(many=True)
 
 
+class Collection(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80))
+    collectable = db.Column(db.String(120))
+
+
+class CollectionSchema(ma.Schema):
+    class Meta:
+        fields = ('id','username','collectable')
+
+collection_schema = CollectionSchema()
+collections_schema = CollectionSchema(many=True)
+
+
+
+
 def token_required(f):
     @wraps(f)
     def decorated(*args,**kwargs):
@@ -286,4 +302,4 @@ def home():
 
 
 if __name__ == "__main__":
-    app.run(port = 5000,host = '127.0.0.1', debug = True)
+    app.run(port = 8000,host = '0.0.0.0', debug = True)
